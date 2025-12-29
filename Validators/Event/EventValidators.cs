@@ -1,0 +1,59 @@
+﻿using FluentValidation;
+using FluentValidation.AspNetCore;
+using ApiProject.DTOs.Event;
+
+namespace ApiProject.Validators.Event
+{
+    public class EventCreateValidator : AbstractValidator<EventCreateDto>
+    {
+        public EventCreateValidator()
+        {
+            RuleFor(x => x.Title)
+                .NotEmpty().WithMessage("Title null ola bilmez")
+                .MaximumLength(150).WithMessage("Basliq 150 chardan cox ola bilmez");
+
+            RuleFor(x => x.Description)
+                .MaximumLength(500).WithMessage("Description 500 karakterden asagi olmalidir");
+
+            RuleFor(x => x.Date)
+                .NotEmpty().WithMessage("Date null ola bilmez")
+                .Must(date => date > DateTime.Now).WithMessage("Date kecmis tarix ola bilmez");
+
+            RuleFor(x => x.Location)
+                .NotEmpty().WithMessage("address null ola bilmez")
+                .MaximumLength(200).WithMessage("address 200 chardan az olmalidir");
+        }
+
+        private bool BeAValidPath(string? path)
+        {
+            return !string.IsNullOrEmpty(path) && (path.Contains("/") || path.Contains("\\"));
+        }
+    }
+
+    public class EventUpdateValidator : AbstractValidator<EventUpdateDto>
+    {
+        public EventUpdateValidator()
+        {
+            RuleFor(x => x.Title)
+                .MaximumLength(150).WithMessage("Basliq 150 chardan cox ola bilmez");
+
+            RuleFor(x => x.Description)
+                .MaximumLength(500).WithMessage("Description 500 chardan asagi olmalidir");
+
+            RuleFor(x => x.Date)
+                .Must(date => date == null || date > DateTime.Now).WithMessage("Date kecmis tarix ola bilmez");
+
+            RuleFor(x => x.Location)
+                .MaximumLength(200).WithMessage("address 200 chardan az olmalidir");
+
+            RuleFor(x => x.BannerImageUrl)
+                .Must(BeAValidPath).When(x => !string.IsNullOrEmpty(x.BannerImageUrl))
+                .WithMessage("Duzgun path daxil edilmeyib");
+        }
+
+        private bool BeAValidPath(string? path)
+        {
+            return !string.IsNullOrEmpty(path) && (path.Contains("/") || path.Contains("\\"));
+        }
+    }
+}

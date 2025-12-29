@@ -1,0 +1,55 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using ApiProject.DTOs.Organizer;
+using ApiProject.Models;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using ApiProject.Data;
+
+namespace ApiProject.Controllers.Organizer;
+
+[Route("api/[controller]")]
+[ApiController]
+public class OrganizerController : ControllerBase
+{
+    private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
+
+    public OrganizerController(AppDbContext context, IMapper mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    [HttpGet("/api/organizers")]
+    public async Task<IActionResult> GetAllOrganizers()
+    {
+        var organizers = await _context.Organizers.Include(o => o.Event).ToListAsync();
+        var organizerDtos = _mapper.Map<List<OrganizerDto>>(organizers);
+        return Ok(organizerDtos);
+    }
+
+    [HttpPost("/api/organizers")]
+    public async Task<IActionResult> CreateOrganizer(CreateOrganizerDto dto)
+    {
+        var organizer = _mapper.Map<Organizer>(dto);
+        await _context.Organizers.AddAsync(organizer);
+        await _context.SaveChangesAsync();
+
+        var organizerDto = _mapper.Map<OrganizerDto>(organizer);
+        return Created($"/api/organizers/{organizer.Id}", organizerDto);
+    }
+
+    [HttpPost("/api/organizers/{id}/logo")]
+    public async Task<IActionResult> UploadLogo(int id, [FromBody] OrganizerLogoUpdateDto dto)
+    {
+        var organizer = await _context.Organizers.FindAsync(id);
+        if (organizer == null)
+            return NotFound("Organizer tapılmadı");
+
+        organizer.LogoUrl = dto.LogoUrl;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+}
+

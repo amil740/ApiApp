@@ -1,0 +1,29 @@
+﻿using AutoMapper;
+using ApiProject.Models;
+using ApiProject.DTOs;
+
+namespace ApiProject.Mappings
+{
+    public class MappingProfile : Profile
+    {
+        public MappingProfile()
+        {
+            CreateMap<Event, EventDto>()
+                .ForMember(dest => dest.OrganizerName, opt => opt.MapFrom(src => src.Organizer.Name));
+            CreateMap<EventCreateDto, Event>();
+            CreateMap<EventUpdateDto, Event>();
+
+            CreateMap<Organizer, OrganizerDto>()
+                .ForMember(dest => dest.Events, opt => opt.MapFrom(src => src.Event));
+            CreateMap<CreateOrganizerDto, Organizer>();
+            CreateMap<UpdateOrganizerDto, Organizer>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            CreateMap<Ticket, TicketDto>()
+                .ForMember(dest => dest.Event.Id, opt => opt.MapFrom(src => src.Event.Title));
+            CreateMap<CreateTicketDto, Ticket>();
+            CreateMap<UpdateTicketDto, Ticket>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+        }
+    }
+}

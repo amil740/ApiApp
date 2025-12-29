@@ -1,0 +1,95 @@
+﻿using ApiProject.Data;
+using ApiProject.DTOs.Ticket;
+using ApiProject.Models;
+using AutoMapper;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace ApiProject.Controllers.Tickets
+{
+    [Route("api/tickets")]
+    [ApiController]
+    public class TicketController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
+
+        public TicketController(AppDbContext context, IMapper mapper)
+        {
+            _context = context;
+            _mapper = mapper;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var tickets = await _context.Tickets
+                .Include(t => t.Event)
+                .ToListAsync();
+
+            var ticketDtos = _mapper.Map<List<TicketDto>>(tickets);
+
+            return Ok(ticketDtos);
+        }
+
+        [HttpPost("/api/events/{eventId}/tickets")]
+        public async Task<IActionResult> CreateForEvent(int eventId, CreateTicketDto dto)
+        {
+            var eventExists = await _context.Events
+                .AnyAsync(e => e.Id == eventId);
+
+            if (!eventExists)
+                return NotFound("Event tapılmadı");
+
+            var ticket = _mapper.Map<Ticket>(dto);
+            ticket.EventId = eventId;
+
+            await _context.Tickets.AddAsync(ticket);
+            await _context.SaveChangesAsync();
+
+            var ticketDto = _mapper.Map<TicketDto>(ticket);
+
+            return Created($"/api/events/{eventId}/tickets/{ticket.Id}", ticketDto);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateTicketDto dto)
+        {
+            var eventExists = await _context.Events
+                .AnyAsync(e => e.Id == dto.EventId);
+
+            if (!eventExists)
+                return BadRequest("Event tapılmadı");
+
+            var ticket = _mapper.Map<Ticket>(dto);
+
+            await _context.Tickets.AddAsync(ticket);
+            await _context.SaveChangesAsync();
+
+            var ticketDto = _mapper.Map<TicketDto>(ticket);
+
+            return Created($"/api/tickets/{ticket.Id}", ticketDto);
+        }
+
+        [HttpGet("/api/events/{eventId}/tickets")]
+        public async Task<IActionResult> GetByEvent(int eventId)
+        {
+            var eventExists = await _context.Events
+                .AnyAsync(e => e.Id == eventId);
+
+            if (!eventExists)
+                return NotFound("Event tapılmadı");
+
+            var tickets = await _context.Tickets
+                .Where(t => t.EventId == eventId)
+                .Include(t => t.Event)
+                .ToListAsync();
+
+            var ticketDtos = _mapper.Map<List<TicketDto>>(tickets);
+
+            return Ok(ticketDtos);
+        }
+    }
+}
