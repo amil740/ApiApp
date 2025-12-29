@@ -1,6 +1,0 @@
-﻿namespace ApiProject.Validators
-{
-    public class EventValidators
-    {
-    }
-}
